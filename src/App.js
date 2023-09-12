@@ -6,7 +6,7 @@ import './index.css'
 const App = () => {
   const [persons, setPersons] = useState([])
 
-  const [filteredPersons, setFiltered] = useState(persons)
+  const [filteredPersons, setFiltered] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [filter, setFilter] = useState('')
@@ -14,33 +14,29 @@ const App = () => {
 
   const [infomessage, setInfomessage] = useState(null)
   const [errormessage, setErrormessage] = useState(null)
-/*
+
   const hook = () => {
     personService
       .getAll('http://localhost:3001/persons')
       .then(response => {
         setPersons(response.data)
-        setFiltered(persons)
+        setFiltered(response.data)
       })
   }
-
-  useEffect(() => {
-    setFiltered(persons)
-
-  }, []);
-  */
+  
+  /*
   useEffect(() => {
     personService
     .getAll('http://localhost:3001/persons')
     .then(response => {
+      console.log(response.data)
       setPersons(response.data)
       setFiltered(persons)
-      console.log(filteredPersons)
     })
   }, [setFiltered]);
 
-  
-  //useEffect(hook, persons)
+  */
+  useEffect(hook, [])
 
   const handleName = (event) => {
     setNewName(event.target.value)
@@ -58,7 +54,6 @@ const App = () => {
     else{
       setFiltered(persons.filter(person => person.name.toLowerCase().includes(filter)))
     }
-    console.log(filteredPersons)
   }
 
   const addPerson = (event) => {
@@ -68,9 +63,6 @@ const App = () => {
       number: newNumber
     }
     if (!persons.some(person => person.name === newName)) {
-      
-      setInfomessage(`${person.name} added to the phonebook`)
-      setTimeout(() => {setInfomessage(null)}, 3000)
       personService.create(person)    
       .then(response => {      
         setPersons(persons.concat(person))
@@ -78,10 +70,35 @@ const App = () => {
         setNewNumber('')
         setFilter('')
         setFiltered(persons)
+        setInfomessage(`${person.name} added to the phonebook`)
+        setTimeout(() => {setInfomessage(null)}, 3000)
       })
+      
+      .catch(error => {
+        setErrormessage(`error in the definiton of name or number`)
+        setTimeout(() => {setErrormessage(null)}, 3000)
+      })
+
     }
     else {
-      alert(`${newName} is already added to phonebook`)
+      
+      let i = 0
+      let idToUpdate = 0
+      while (i < persons.length){
+        if (newName === persons[i].name){
+          idToUpdate = persons[i].id
+        }
+        i = i + 1
+      }
+      console.log(idToUpdate)
+      personService.update(idToUpdate, person).then(response => {      
+        setPersons(persons.concat(person))
+        setNewName('')
+        setNewNumber('')
+        setFilter('')
+        setFiltered(persons)
+      })
+      alert(`${newName} is already added to phonebook, updating number`)
     }
   }
   
@@ -97,7 +114,8 @@ const App = () => {
         setFiltered(filteredPersons.filter(n => n.id !== id))
       })
   }
-  
+
+  console.log(Array.isArray(filteredPersons))
   return (
     <div>
       <h2>Phonebook</h2>
@@ -113,7 +131,7 @@ const App = () => {
       {<AddpersonForm addPerson={addPerson} newName={newName} handleName={handleName} newNumber={newNumber} handleNumber={handleNumber} removePerson = {removePerson} personService = {personService} />}
       <h2>Numbers</h2>
       <ul>
-        {filteredPersons.map(person => <Person key={person.name} name={person.name} number={person.number} id = {person.id} removePerson = {removePerson}/>)}
+        {Array.isArray(filteredPersons) ? filteredPersons.map(person => <Person key={person.name} name={person.name} number={person.number} id = {person.id} removePerson = {removePerson}/>): <p> No numbers saved </p>}
       </ul>
     </div>
   )
